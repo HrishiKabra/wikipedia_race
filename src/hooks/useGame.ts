@@ -19,8 +19,9 @@ type Action =
   | { type: 'SET_LOADING_HTML'; html: string }
   | { type: 'RESET' }
 
-const initial: GameState = {
+export const initialGameState: GameState = {
   phase: 'setup',
+  won: null,
   start: null,
   target: null,
   currentTitle: '',
@@ -34,10 +35,10 @@ const initial: GameState = {
 
 const norm = (t: string) => t.toLowerCase().replace(/_/g, ' ').trim()
 
-function reducer(state: GameState, action: Action): GameState {
+export function reducer(state: GameState, action: Action): GameState {
   switch (action.type) {
     case 'SET_ARTICLES':
-      return { ...initial, start: action.start, target: action.target }
+      return { ...initialGameState, start: action.start, target: action.target }
 
     case 'SET_START_ARTICLE':
       return { ...state, start: action.start }
@@ -84,7 +85,7 @@ function reducer(state: GameState, action: Action): GameState {
       return { ...state, currentHTML: action.html }
 
     case 'FINISH':
-      return { ...state, phase: 'finished' }
+      return { ...state, phase: 'finished', won: action.won }
 
     case 'BFS_START':
       return { ...state, bfs: { status: 'running', path: null, progress: 'Starting search…' } }
@@ -103,7 +104,7 @@ function reducer(state: GameState, action: Action): GameState {
       }
 
     case 'RESET':
-      return initial
+      return initialGameState
 
     default:
       return state
@@ -111,7 +112,7 @@ function reducer(state: GameState, action: Action): GameState {
 }
 
 export function useGame() {
-  const [state, dispatch] = useReducer(reducer, initial)
+  const [state, dispatch] = useReducer(reducer, initialGameState)
   const isLoadingRef = useRef(false)
   const timerRunning = state.phase === 'playing'
   const elapsedRef = useRef(0)

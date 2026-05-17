@@ -13,6 +13,7 @@ export interface BfsState {
 
 export interface GameState {
   phase: Phase
+  won: boolean | null
   start: ArticleInfo | null
   target: ArticleInfo | null
   currentTitle: string

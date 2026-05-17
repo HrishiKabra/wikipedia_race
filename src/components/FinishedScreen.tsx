@@ -15,7 +15,7 @@ function formatTime(ms: number): string {
 
 export function FinishedScreen({ state, finalElapsed, onPlayAgain }: FinishedScreenProps) {
   const { path, start, target, bfs } = state
-  const won = path.length > 0 && target && path[path.length - 1].toLowerCase().replace(/_/g, ' ') === target.title.toLowerCase().replace(/_/g, ' ')
+  const won = state.won === true
   const hops = path.length - 1
   const bfsHops = bfs.path ? bfs.path.length - 1 : null
 
