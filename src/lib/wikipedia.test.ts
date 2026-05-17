@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { searchArticles } from './wikipedia'
+import { isSameArticle, searchArticles } from './wikipedia'
 
 describe('searchArticles', () => {
   afterEach(() => {
@@ -37,5 +37,27 @@ describe('searchArticles', () => {
 
     expect(fetchMock).not.toHaveBeenCalled()
     expect(results).toEqual([])
+  })
+})
+
+describe('isSameArticle', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('treats redirect aliases as the same article', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        query: {
+          redirects: [{ from: 'Ninja (streamer)', to: 'Ninja (gamer)' }],
+          pages: {
+            '56881343': { pageid: 56881343, title: 'Ninja (gamer)' },
+          },
+        },
+      }),
+    } as Response)
+
+    await expect(isSameArticle('Ninja (streamer)', 'Ninja (gamer)')).resolves.toBe(true)
   })
 })

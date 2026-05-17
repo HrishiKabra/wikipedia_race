@@ -92,6 +92,27 @@ export async function fetchArticleSummary(title: string): Promise<ArticleInfo> {
   }
 }
 
+export async function isSameArticle(a: string, b: string): Promise<boolean> {
+  const norm = (title: string) => title.toLowerCase().replace(/_/g, ' ').trim()
+  if (norm(a) === norm(b)) return true
+
+  try {
+    const titles = `${encodeURIComponent(a)}|${encodeURIComponent(b)}`
+    const url = `${BASE}/w/api.php?action=query&titles=${titles}&redirects=1&format=json&origin=*`
+    const res = await fetch(url)
+    if (!res.ok) return false
+
+    const data = await res.json()
+    const pages = data?.query?.pages
+    if (!pages || typeof pages !== 'object') return false
+
+    const pageIds = Object.keys(pages).filter((pageId) => pageId !== '-1')
+    return pageIds.length === 1
+  } catch {
+    return false
+  }
+}
+
 export async function fetchArticleHTML(title: string): Promise<string> {
   const encoded = encodeURIComponent(title)
   const res = await fetch(`${BASE}/api/rest_v1/page/html/${encoded}`)

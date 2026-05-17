@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react'
 import type { GameState, Phase } from '../types'
-import { fetchArticleHTML, fetchTwoArticles } from '../lib/wikipedia'
+import { fetchArticleHTML, fetchTwoArticles, isSameArticle } from '../lib/wikipedia'
 import { processHTML } from '../lib/processHTML'
 import { bfs } from '../lib/bfs'
 
@@ -184,10 +184,15 @@ export function useGame() {
         const html = processHTML(raw)
         dispatch({ type: 'NAVIGATE', title, html, addToPath })
 
+        const targetTitle = state.target?.title
+        const reachedTarget =
+          targetTitle !== undefined &&
+          (norm(title) === norm(targetTitle) || (await isSameArticle(title, targetTitle)))
+
         // Win check
-        if (state.target && norm(title) === norm(state.target.title)) {
+        if (reachedTarget) {
           dispatch({ type: 'FINISH', won: true })
-          runBfs(state.start!.title, state.target.title)
+          runBfs(state.start!.title, targetTitle)
         }
       } finally {
         isLoadingRef.current = false
