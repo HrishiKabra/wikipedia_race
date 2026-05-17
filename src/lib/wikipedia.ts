@@ -58,6 +58,40 @@ export async function fetchTwoArticles(): Promise<[ArticleInfo, ArticleInfo]> {
   }
 }
 
+export async function searchArticles(query: string): Promise<ArticleInfo[]> {
+  const trimmed = query.trim()
+  if (!trimmed) return []
+
+  try {
+    const encoded = encodeURIComponent(trimmed)
+    const url = `${BASE}/w/api.php?action=query&list=search&srsearch=${encoded}&srnamespace=0&srlimit=8&format=json&origin=*`
+    const res = await fetch(url)
+    if (!res.ok) return []
+
+    const data = await res.json()
+    const results = data?.query?.search
+    if (!Array.isArray(results)) return []
+
+    return results
+      .filter((result): result is { title: string } => typeof result?.title === 'string')
+      .map((result) => ({ title: result.title, description: '' }))
+  } catch {
+    return []
+  }
+}
+
+export async function fetchArticleSummary(title: string): Promise<ArticleInfo> {
+  const encoded = encodeURIComponent(title)
+  const res = await fetch(`${BASE}/api/rest_v1/page/summary/${encoded}`)
+  if (!res.ok) return { title, description: '' }
+
+  const data = await res.json()
+  return {
+    title: data.title ?? title,
+    description: data.description ?? data.extract?.slice(0, 160) ?? '',
+  }
+}
+
 export async function fetchArticleHTML(title: string): Promise<string> {
   const encoded = encodeURIComponent(title)
   const res = await fetch(`${BASE}/api/rest_v1/page/html/${encoded}`)

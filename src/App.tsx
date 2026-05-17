@@ -10,6 +10,8 @@ export default function App() {
     isLoading,
     getElapsed,
     shuffle,
+    setStartArticle,
+    setTargetArticle,
     startGame,
     navigateTo,
     browserBack,
@@ -32,6 +34,8 @@ export default function App() {
           target={state.target}
           onStart={startGame}
           onShuffle={shuffle}
+          onSetStart={setStartArticle}
+          onSetTarget={setTargetArticle}
         />
       )
 

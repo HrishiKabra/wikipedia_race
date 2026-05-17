@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react'
+import { fetchArticleSummary, searchArticles } from '../lib/wikipedia'
 import type { ArticleInfo } from '../types'
 
 interface SetupScreenProps {
@@ -5,6 +7,8 @@ interface SetupScreenProps {
   target: ArticleInfo | null
   onStart: () => void
   onShuffle: () => void
+  onSetStart: (article: ArticleInfo) => void
+  onSetTarget: (article: ArticleInfo) => void
 }
 
 function ArticleCard({
@@ -45,7 +49,115 @@ function ArticleCard({
   )
 }
 
-export function SetupScreen({ start, target, onStart, onShuffle }: SetupScreenProps) {
+function ArticlePicker({
+  label,
+  selected,
+  onSelect,
+}: {
+  label: string
+  selected: ArticleInfo | null
+  onSelect: (article: ArticleInfo) => void
+}) {
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<ArticleInfo[]>([])
+  const [status, setStatus] = useState('')
+  const [open, setOpen] = useState(false)
+  const inputId = `${label.toLowerCase()}-article-search`
+  const latestRequest = useRef(0)
+
+  useEffect(() => {
+    setQuery(selected?.title ?? '')
+  }, [selected?.title])
+
+  useEffect(() => {
+    const requestId = latestRequest.current + 1
+    latestRequest.current = requestId
+
+    if (!open) {
+      setResults([])
+      setStatus('')
+      return
+    }
+
+    if (query.trim().length < 2) {
+      setResults([])
+      setStatus(query.trim() ? 'Keep typing...' : '')
+      return
+    }
+
+    setStatus('Searching...')
+    const timeout = window.setTimeout(async () => {
+      const matches = await searchArticles(query)
+      if (latestRequest.current !== requestId) return
+      setResults(matches)
+      setStatus(matches.length ? '' : 'No matches')
+    }, 220)
+
+    return () => window.clearTimeout(timeout)
+  }, [open, query])
+
+  async function chooseArticle(article: ArticleInfo) {
+    setQuery(article.title)
+    setOpen(false)
+    setResults([])
+    setStatus('Loading preview...')
+    const summary = await fetchArticleSummary(article.title)
+    onSelect(summary)
+    setStatus('')
+  }
+
+  return (
+    <div className="relative">
+      <label
+        htmlFor={inputId}
+        className="block text-xs font-bold tracking-widest uppercase text-gray-400 mb-2"
+      >
+        {label}
+      </label>
+      <input
+        id={inputId}
+        value={query}
+        onChange={(event) => {
+          setQuery(event.target.value)
+          setOpen(true)
+        }}
+        onFocus={() => setOpen(true)}
+        placeholder={selected ? selected.title : `Search ${label.toLowerCase()} article`}
+        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-900 outline-none transition focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"
+      />
+
+      {open && (query.trim().length > 0 || results.length > 0) ? (
+        <div className="absolute z-20 mt-2 max-h-64 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl">
+          <div className="max-h-64 overflow-y-auto py-1">
+            {results.map((article) => (
+              <button
+                key={article.title}
+                type="button"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => chooseArticle(article)}
+                className="block w-full px-4 py-3 text-left text-sm font-semibold text-gray-800 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+              >
+                {article.title}
+              </button>
+            ))}
+            {status ? (
+              <div className="px-4 py-3 text-sm font-semibold text-gray-400">{status}</div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+export function SetupScreen({
+  start,
+  target,
+  onStart,
+  onShuffle,
+  onSetStart,
+  onSetTarget,
+}: SetupScreenProps) {
   const ready = start !== null && target !== null
 
   return (
@@ -59,8 +171,13 @@ export function SetupScreen({ start, target, onStart, onShuffle }: SetupScreenPr
           </p>
         </div>
 
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ArticlePicker label="Start" selected={start} onSelect={onSetStart} />
+          <ArticlePicker label="Target" selected={target} onSelect={onSetTarget} />
+        </div>
+
         {/* Article cards */}
-        <div className="flex gap-4 items-stretch">
+        <div className="flex flex-col gap-4 items-stretch sm:flex-row">
           <ArticleCard role="Start" article={start} />
           <div className="flex items-center self-center text-3xl text-gray-300 font-light select-none">→</div>
           <ArticleCard role="Target" article={target} accent />

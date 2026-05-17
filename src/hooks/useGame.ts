@@ -6,6 +6,8 @@ import { bfs } from '../lib/bfs'
 
 type Action =
   | { type: 'SET_ARTICLES'; start: { title: string; description: string }; target: { title: string; description: string } }
+  | { type: 'SET_START_ARTICLE'; start: { title: string; description: string } }
+  | { type: 'SET_TARGET_ARTICLE'; target: { title: string; description: string } }
   | { type: 'START_GAME'; html: string }
   | { type: 'NAVIGATE'; title: string; html: string; addToPath: boolean }
   | { type: 'BROWSER_BACK' }
@@ -36,6 +38,12 @@ function reducer(state: GameState, action: Action): GameState {
   switch (action.type) {
     case 'SET_ARTICLES':
       return { ...initial, start: action.start, target: action.target }
+
+    case 'SET_START_ARTICLE':
+      return { ...state, start: action.start }
+
+    case 'SET_TARGET_ARTICLE':
+      return { ...state, target: action.target }
 
     case 'START_GAME': {
       const title = state.start!.title
@@ -138,6 +146,14 @@ export function useGame() {
     dispatch({ type: 'SET_ARTICLES', start, target })
   }, [])
 
+  const setStartArticle = useCallback((start: { title: string; description: string }) => {
+    dispatch({ type: 'SET_START_ARTICLE', start })
+  }, [])
+
+  const setTargetArticle = useCallback((target: { title: string; description: string }) => {
+    dispatch({ type: 'SET_TARGET_ARTICLE', target })
+  }, [])
+
   // On mount, fetch initial articles
   useEffect(() => {
     shuffle()
@@ -233,6 +249,8 @@ export function useGame() {
     isLoading: isLoadingRef,
     getElapsed,
     shuffle,
+    setStartArticle,
+    setTargetArticle,
     startGame,
     navigateTo,
     browserBack,
